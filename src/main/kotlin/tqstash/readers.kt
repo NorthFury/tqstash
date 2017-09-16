@@ -3,39 +3,37 @@ package tqstash
 import tqstash.dto.Item
 import tqstash.dto.Position
 import tqstash.dto.Stash
-import java.io.DataInput
-import java.io.DataInputStream
+import tqstash.io.TQInputStream
 import java.io.File
-import java.nio.charset.Charset
 
-fun readStash(file: File): Stash = DataInputStream(file.inputStream().buffered()).use { stream ->
+fun readStash(file: File): Stash = TQInputStream(file.inputStream().buffered()).use { stream ->
     stream.skip(4)
     stream.readConstantString("begin_block")
-    stream.skipBytes(4)
+    stream.skip(4)
     stream.readConstantString("stashVersion")
-    val stashVersion = stream.readIntLE()
+    val stashVersion = stream.readInt()
     stream.readConstantString("fName")
     val name = stream.readRawString()
     stream.readConstantString("sackWidth")
-    val width = stream.readIntLE()
+    val width = stream.readInt()
     stream.readConstantString("sackHeight")
-    val height = stream.readIntLE()
+    val height = stream.readInt()
 
     stream.readConstantString("numItems")
-    val sackSize = stream.readIntLE()
+    val sackSize = stream.readInt()
 
     val items = 0.until(sackSize).map {
         val item = stream.readItem()
         stream.readConstantString("xOffset")
-        val x = stream.readFloatLE().toInt()
+        val x = stream.readFloat().toInt()
         stream.readConstantString("yOffset")
-        val y = stream.readFloatLE().toInt()
+        val y = stream.readFloat().toInt()
 
         item to Position(x, y)
     }
 
     stream.readConstantString("end_block")
-    stream.skipBytes(4)
+    stream.skip(4)
 
     Stash(
             stashVersion = stashVersion,
@@ -46,12 +44,12 @@ fun readStash(file: File): Stash = DataInputStream(file.inputStream().buffered()
     )
 }
 
-private fun DataInput.readItem(): Item {
+private fun TQInputStream.readItem(): Item {
     val stream = this
     stream.readConstantString("stackCount")
-    val stackCount = stream.readIntLE()
+    val stackCount = stream.readInt()
     stream.readConstantString("begin_block")
-    stream.skipBytes(4)
+    stream.skip(4)
     stream.readConstantString("baseName")
     val baseItemId = stream.readCString()
     stream.readConstantString("prefixName")
@@ -63,11 +61,11 @@ private fun DataInput.readItem(): Item {
     stream.readConstantString("relicBonus")
     val relicBonusId = stream.readCString()
     stream.readConstantString("seed")
-    val seed = stream.readIntLE()
+    val seed = stream.readInt()
     stream.readConstantString("var1")
-    val var1 = stream.readIntLE()
+    val var1 = stream.readInt()
     stream.readConstantString("end_block")
-    stream.skipBytes(4)
+    stream.skip(4)
 
     return Item(
             stackCount = stackCount,
@@ -81,26 +79,7 @@ private fun DataInput.readItem(): Item {
     )
 }
 
-private fun DataInput.readConstantString(value: String) {
+private fun TQInputStream.readConstantString(value: String) {
     val read = this.readCString()
     if (read != value) throw Exception("read: $read expected: $value")
-}
-
-private fun DataInput.readCString(): String {
-    return this.readRawString().toString(Charset.defaultCharset())
-}
-
-private fun DataInput.readRawString(): ByteArray {
-    val length = this.readIntLE()
-    val stringBytes = ByteArray(length)
-    this.readFully(stringBytes)
-    return stringBytes
-}
-
-private fun DataInput.readFloatLE(): Float {
-    return java.lang.Float.intBitsToFloat(this.readIntLE())
-}
-
-private fun DataInput.readIntLE(): Int {
-    return Integer.reverseBytes(this.readInt())
 }

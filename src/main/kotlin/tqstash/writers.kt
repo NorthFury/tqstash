@@ -2,9 +2,8 @@ package tqstash
 
 import tqstash.dto.Item
 import tqstash.dto.Stash
+import tqstash.io.TQOutputStream
 import java.io.ByteArrayOutputStream
-import java.io.DataOutput
-import java.io.DataOutputStream
 import java.io.File
 
 fun writeStash(stash: Stash, file: File) {
@@ -19,42 +18,42 @@ fun writeStash(stash: Stash, file: File) {
 
 private fun encodeStash(stash: Stash): ByteArray {
     val baoStream = ByteArrayOutputStream(2048)
-    DataOutputStream(baoStream).use { stream ->
+    TQOutputStream(baoStream).use { stream ->
         stream.writeCString("begin_block")
-        stream.writeIntLE(BEGIN_BLOCK)
+        stream.writeInt(BEGIN_BLOCK)
         stream.writeCString("stashVersion")
-        stream.writeIntLE(stash.stashVersion)
+        stream.writeInt(stash.stashVersion)
         stream.writeCString("fName")
-        stream.writeIntLE(stash.name.size)
+        stream.writeInt(stash.name.size)
         stream.write(stash.name)
         stream.writeCString("sackWidth")
-        stream.writeIntLE(stash.width)
+        stream.writeInt(stash.width)
         stream.writeCString("sackHeight")
-        stream.writeIntLE(stash.height)
+        stream.writeInt(stash.height)
         stream.writeCString("numItems")
-        stream.writeIntLE(stash.items.size)
+        stream.writeInt(stash.items.size)
 
         stash.items.forEach { (item, position) ->
             stream.writeItem(item)
             stream.writeCString("xOffset")
-            stream.writeFloatLE(position.x.toFloat())
+            stream.writeFloat(position.x.toFloat())
             stream.writeCString("yOffset")
-            stream.writeFloatLE(position.y.toFloat())
+            stream.writeFloat(position.y.toFloat())
         }
 
         stream.writeCString("end_block")
-        stream.writeIntLE(END_BLOCK)
+        stream.writeInt(END_BLOCK)
     }
 
     return baoStream.toByteArray()
 }
 
-private fun DataOutput.writeItem(item: Item) {
+private fun TQOutputStream.writeItem(item: Item) {
     val stream = this
     stream.writeCString("stackCount")
-    stream.writeIntLE(item.stackCount)
+    stream.writeInt(item.stackCount)
     stream.writeCString("begin_block")
-    stream.writeIntLE(BEGIN_BLOCK)
+    stream.writeInt(BEGIN_BLOCK)
     stream.writeCString("baseName")
     stream.writeCString(item.baseItemId)
     stream.writeCString("prefixName")
@@ -66,24 +65,11 @@ private fun DataOutput.writeItem(item: Item) {
     stream.writeCString("relicBonus")
     stream.writeCString(item.relicBonusId)
     stream.writeCString("seed")
-    stream.writeIntLE(item.seed)
+    stream.writeInt(item.seed)
     stream.writeCString("var1")
-    stream.writeIntLE(item.var1)
+    stream.writeInt(item.var1)
     stream.writeCString("end_block")
-    stream.writeIntLE(END_BLOCK)
-}
-
-private fun DataOutput.writeIntLE(v: Int) {
-    this.writeInt(Integer.reverseBytes(v))
-}
-
-private fun DataOutput.writeFloatLE(v: Float) {
-    this.writeIntLE(java.lang.Float.floatToRawIntBits(v))
-}
-
-private fun DataOutput.writeCString(v: String) {
-    this.writeIntLE(v.length)
-    this.writeBytes(v)
+    stream.writeInt(END_BLOCK)
 }
 
 private fun computeCRC(byteArray: ByteArray): ByteArray {
