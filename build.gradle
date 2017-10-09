@@ -2,7 +2,7 @@ group 'north'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.1.4-3'
+    ext.kotlin_version = '1.1.51'
 
     repositories {
         mavenCentral()
@@ -21,6 +21,10 @@ repositories {
 }
 
 dependencies {
+    compile group: 'org.jparsec',
+            name: 'jparsec',
+            version: '3.0'
+
     compile group: 'org.jetbrains.kotlin',
             name: 'kotlin-stdlib-jre8',
             version: kotlin_version
