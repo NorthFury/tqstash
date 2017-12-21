@@ -39,6 +39,18 @@ class TQInputStream(input: InputStream) : FilterInputStream(input) {
         return stringBytes
     }
 
+    private val stringBuffer = ByteArray(2048)
+    fun readNullTerminatedString(): String {
+        var i = 0
+        while (true) {
+            val byte = `in`.read()
+            if (byte == 0) break
+            stringBuffer[i++] = byte.toByte()
+        }
+
+        return String(stringBuffer, 0, i, Charset.defaultCharset())
+    }
+
     private fun readFully(b: ByteArray, len: Int) {
         var total = 0
         while (total < len) {
